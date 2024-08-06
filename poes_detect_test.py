@@ -209,42 +209,68 @@ def is_fallen(keypoints, boxes):
         status_score['Sit'] += -0.15
         _weight = f'{_weight}, [5]Fall:+0.6, Sit:-0.15'
 
-# A肩部胯部膝盖夹角 
-# 角度在80度到100度之间，表明腿部与上半身有一定角度，类似坐下的姿势
-# 且人体整体角度在80度到100度之间，表示接近直立的状态
-    if 80 < Hip_Knee_Shoulders_angle < 100 and 80 < human_angle < 100:
-        status_score['Sit'] += 0.8
-        status_score['Stand'] += -0.035
-        #垂直方向参数超过预期，则进一步增加
-        if vertical_threshold > Vertical_threshold:
-            status_score['Sit'] += +0.15
-        _weight = f'{_weight}, [6]Stand:-0.035, Sit:+0.15'
 
-    elif Hip_Knee_Shoulders_angle > 170 and 80 < human_angle < 100:
-        status_score['Stand'] += 0.2
+    def update_scores(status_score, sit_increment, stand_increment, fall_increment):
+        if sit_increment:
+            status_score['Sit'] += sit_increment
+        if stand_increment:
+            status_score['Stand'] += stand_increment
+        if fall_increment:
+            status_score['Fall'] += fall_increment
 
-    elif Hip_Knee_Shoulders_angle < 90 and 0 < human_angle < 45:
-        status_score['Fall'] += 0.2
+    def process_angles(angle1, angle2, status_score, vertical_threshold, Vertical_threshold):
+        if 80 < angle1 < 100 and 80 < angle2 < 100:
+            update_scores(status_score, 0.8, -0.035, 0)
+            if vertical_threshold > Vertical_threshold:
+                update_scores(status_score, 0.15, 0, 0)
+        elif angle1 > 170 and 80 < angle2 < 100:
+            update_scores(status_score, 0, 0.2, 0)
+        elif angle1 < 90 and 0 < angle2 < 45:
+            update_scores(status_score, 0, 0, 0.2)
+        else:
+            update_scores(status_score, 0, 0.05, 0.05)
 
-    else:
-        status_score['Fall'] += 0.05
-        status_score['Stand'] += 0.05
-        _weight = f'{_weight}, [7]Stand:+0.05, Fall:+0.05'
+# 调用处理两个不同的角度组合
+    process_angles(Hip_Knee_Shoulders_angle, human_angle, status_score, vertical_threshold, Vertical_threshold)
+    process_angles(Ankle_Knee_Hip_angle, human_angle, status_score, vertical_threshold, Vertical_threshold)
 
 
-# B胯部膝盖小腿
-# 角度在80度到100度之间，表明腿部与上半身有一定角度，通常表示膝盖和髋部弯曲，接近坐下
-# 且人体整体角度在80度到100度之间，表示接近直立的状态
-    if 80 < Ankle_Knee_Hip_angle < 145 and 80 < human_angle < 100:
-        status_score['Sit'] += 0.8
-        status_score['Stand'] += -0.035
-        if vertical_threshold > Vertical_threshold:
-            status_score['Sit'] += +0.15
-        _weight = f'{_weight}, [8]Stand:+0.035, Sit:+0.15'
-    else:
-        status_score['Fall'] += 0.05
-        status_score['Stand'] += 0.05
-        _weight = f'{_weight}, [9]Fall:+0.05, Stand:+0.05'
+# # A肩部胯部膝盖夹角 
+# # 角度在80度到100度之间，表明腿部与上半身有一定角度，类似坐下的姿势
+# # 且人体整体角度在80度到100度之间，表示接近直立的状态
+#     if 80 < Hip_Knee_Shoulders_angle < 100 and 80 < human_angle < 100:
+#         status_score['Sit'] += 0.8
+#         status_score['Stand'] += -0.035
+#         #垂直方向参数超过预期，则进一步增加
+#         if vertical_threshold > Vertical_threshold:
+#             status_score['Sit'] += +0.15
+#         _weight = f'{_weight}, [6]Stand:-0.035, Sit:+0.15'
+
+#     elif Hip_Knee_Shoulders_angle > 170 and 80 < human_angle < 100:
+#         status_score['Stand'] += 0.2
+
+#     elif Hip_Knee_Shoulders_angle < 90 and 0 < human_angle < 45:
+#         status_score['Fall'] += 0.2
+
+#     else:
+#         status_score['Fall'] += 0.05
+#         status_score['Stand'] += 0.05
+#         _weight = f'{_weight}, [7]Stand:+0.05, Fall:+0.05'
+
+
+# # B胯部膝盖小腿
+# # 角度在80度到100度之间，表明腿部与上半身有一定角度，通常表示膝盖和髋部弯曲，接近坐下
+# # 且人体整体角度在80度到100度之间，表示接近直立的状态
+#     if 80 < Ankle_Knee_Hip_angle < 145 and 80 < human_angle < 100:
+#         status_score['Sit'] += 0.8
+#         status_score['Stand'] += -0.035
+#         if vertical_threshold > Vertical_threshold:
+#             status_score['Sit'] += +0.15
+#         _weight = f'{_weight}, [8]Stand:+0.035, Sit:+0.15'
+#     else:
+#         status_score['Fall'] += 0.05
+#         status_score['Stand'] += 0.05
+#         _weight = f'{_weight}, [9]Fall:+0.05, Stand:+0.05'
 
     # if 65 < Hip_Knee_Right_angle < 145 and 45 < human_angle < 125:
     #     status_score['Sit'] += 0.8
@@ -253,6 +279,8 @@ def is_fallen(keypoints, boxes):
     # else:
     #     status_score['Fall'] += 0.05
     #     status_score['Stand'] += 0.05
+
+
 
     # status_score.values() 返回所有状态的分数。
     # status_score.keys() 返回所有状态的名称'Stand', 'Sit', 'Fall'
